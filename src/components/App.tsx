@@ -2,7 +2,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { formatDuration } from '../lib/duration';
 import { importFile } from '../lib/importSop';
 import { sopReducer, totalSeconds } from '../lib/sopReducer';
-import { requestPermissionOnce, showSystemNotification, startAlarm, startTitleFlash } from '../lib/notify';
+import { primeAudio, requestPermissionOnce, showSystemNotification, startAlarm, startTitleFlash } from '../lib/notify';
 import { ImportError, type Step } from '../lib/types';
 import { DoneAlert } from './DoneAlert';
 import { DownloadMenu } from './DownloadMenu';
@@ -51,6 +51,7 @@ export function App() {
       dispatch({ type: 'load', sop: next });
       setError(null);
       setEditingId(null);
+      clearDone();
       setView('list');
       setNotice(
         ignoredColumns.length
@@ -97,7 +98,7 @@ export function App() {
           <StepMode
             sop={sop}
             onExit={() => { clearDone(); setView('list'); }}
-            onTimerStart={() => { clearDone(); requestPermissionOnce(); }}
+            onTimerStart={() => { clearDone(); primeAudio(); requestPermissionOnce(); }}
             onTimerEnd={handleTimerEnd}
           />
         </>

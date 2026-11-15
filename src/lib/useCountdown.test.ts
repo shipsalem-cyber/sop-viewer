@@ -64,3 +64,14 @@ test('background throttling: ends on wall-clock time', () => {
   expect(result.current.ended).toBe(true);
   expect(onEnd).toHaveBeenCalledTimes(1);
 });
+
+test('fires end on time even if the repeating tick never runs (background throttling)', () => {
+  const onEnd = vi.fn();
+  const spy = vi.spyOn(globalThis, 'setInterval').mockImplementation(() => 0 as unknown as ReturnType<typeof setInterval>);
+  const { result } = renderHook(() => useCountdown(onEnd));
+  act(() => result.current.start(10));
+  tick(10_000);
+  spy.mockRestore();
+  expect(onEnd).toHaveBeenCalledTimes(1);
+  expect(result.current.ended).toBe(true);
+});

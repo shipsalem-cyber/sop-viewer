@@ -44,3 +44,17 @@ test('moving to next step clears the previous alert', async () => {
   act(() => { vi.advanceTimersByTime(1000); });
   expect(screen.getByRole('alert')).toHaveTextContent('Step 2 — Rest is done');
 });
+
+test('importing a new file while the alarm rings stops it', async () => {
+  await openStepMode();
+  fireEvent.click(screen.getByRole('button', { name: 'Start timer' }));
+  act(() => { vi.advanceTimersByTime(3000); });
+  expect(document.title).toBe('⏰ Done');
+  vi.useRealTimers();
+  vi.spyOn(window, 'confirm').mockReturnValue(true);
+  const file = new File([JSON.stringify([{ Title: 'Other' }])], 'Other.json');
+  await act(async () => { fireEvent.change(screen.getByLabelText('Import Excel/JSON'), { target: { files: [file] } }); });
+  await screen.findByText('Other');
+  expect(document.title).toBe('SOP Viewer');
+  expect(screen.queryByRole('alert')).toBeNull();
+});

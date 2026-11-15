@@ -80,3 +80,34 @@ test('startAlarm without AudioContext is a no-op', async () => {
   const stop = startAlarm();
   expect(() => stop()).not.toThrow();
 });
+
+function stubAudio() {
+  const made: { resume: ReturnType<typeof vi.fn>; suspend: ReturnType<typeof vi.fn> }[] = [];
+  class FakeCtx {
+    state = 'suspended';
+    currentTime = 0;
+    destination = {};
+    resume = vi.fn(async () => { this.state = 'running'; });
+    suspend = vi.fn(async () => {});
+    close = vi.fn(async () => {});
+    constructor() { made.push(this); }
+    createOscillator() { return { frequency: {}, connect: (n: unknown) => n, start() {}, stop() {} }; }
+    createGain() {
+      const g = { gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {} }, connect: (n: unknown) => n };
+      return g;
+    }
+  }
+  vi.stubGlobal('AudioContext', FakeCtx);
+  return made;
+}
+
+test('primeAudio unlocks one shared context that startAlarm reuses', async () => {
+  const made = stubAudio();
+  const { primeAudio, startAlarm } = await load();
+  primeAudio();
+  expect(made).toHaveLength(1);
+  expect(made[0].resume).toHaveBeenCalled();
+  const stop = startAlarm();
+  expect(made).toHaveLength(1);
+  stop();
+});

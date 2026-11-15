@@ -18,7 +18,7 @@ test('object with steps + title', () => {
 
 test('case-insensitive keys, unit suffix, extras reported', () => {
   const r = parseJsonText(JSON.stringify([{ ' title ': 'A', 'Duration (min)': '5', Image: 'x.png', type: 'prep' }]), 'x.json');
-  expect(r.sop.steps[0]).toMatchObject({ title: 'A', duration: '5' });
+  expect(r.sop.steps[0]).toMatchObject({ title: 'A', duration: '5 min' });
   expect(r.ignoredColumns).toEqual(['Image', 'type']);
 });
 
@@ -81,4 +81,26 @@ test('unsupported extension', async () => {
 test('importFile reads JSON', async () => {
   const r = await importFile(new File([JSON.stringify([{ Title: 'A' }])], 'Soup.JSON'));
   expect(r.sop.title).toBe('Soup');
+});
+
+test('pre-numbered empty rows are skipped', () => {
+  const buf = makeXlsx([['Step', 'Title', 'Description', 'Duration'], [1, 'a', '', ''], [2, '', '', ''], [3, '', '', '']]);
+  expect(parseWorkbook(buf, 'x.xlsx').sop.steps.map((s) => s.title)).toEqual(['a']);
+});
+
+test('footer row without title or description is skipped and does not stop sorting', () => {
+  const buf = makeXlsx([['Step', 'Title', 'Description', 'Duration'], [3, 'c', '', ''], [1, 'a', '', ''], ['Total', '', '', '1h 45m']]);
+  expect(parseWorkbook(buf, 'x.xlsx').sop.steps.map((s) => s.title)).toEqual(['a', 'c']);
+});
+
+test.each([
+  ['Duration (sec)', 45, '45 sec'],
+  ['Duration (seconds)', '30', '30 sec'],
+  ['Duration (hours)', 1.5, '1.5 h'],
+  ['Duration (min)', 5, '5 min'],
+  ['Duration (approx)', 5, '5'],
+  ['Duration (sec)', '2 min', '2 min'],
+] as const)('%s with %j imports as %j', (col, value, expected) => {
+  const r = parseJsonText(JSON.stringify([{ Title: 'A', [col]: value }]), 'x.json');
+  expect(r.sop.steps[0].duration).toBe(expected);
 });

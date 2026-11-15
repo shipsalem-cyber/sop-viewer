@@ -23,18 +23,36 @@ export function showSystemNotification(message: string): void {
   }
 }
 
-/** Short beep every 1.5 s until stopped. */
-export function startAlarm(): () => void {
+let audio: AudioContext | null = null;
+
+function getAudio(): AudioContext | null {
+  if (audio) return audio;
   const Ctx = typeof window !== 'undefined'
     ? window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     : undefined;
-  if (!Ctx) return () => {};
-  let ctx: AudioContext;
+  if (!Ctx) return null;
   try {
-    ctx = new Ctx();
+    audio = new Ctx();
   } catch {
-    return () => {};
+    audio = null;
   }
+  return audio;
+}
+
+/**
+ * Create/unlock the shared audio context. Call from a click (Start, Next):
+ * Safari and Chrome only allow sound from a context resumed during a user gesture.
+ */
+export function primeAudio(): void {
+  const ctx = getAudio();
+  if (ctx && ctx.state !== 'running') void ctx.resume().catch(() => {});
+}
+
+/** Short beep every 1.5 s until stopped. */
+export function startAlarm(): () => void {
+  const ctx = getAudio();
+  if (!ctx) return () => {};
+  if (ctx.state !== 'running') void ctx.resume().catch(() => {});
   const beep = () => {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -48,10 +66,7 @@ export function startAlarm(): () => void {
   };
   beep();
   const id = setInterval(beep, 1500);
-  return () => {
-    clearInterval(id);
-    void ctx.close().catch(() => {});
-  };
+  return () => clearInterval(id);
 }
 
 /** Flash the tab title until stopped; stop restores the original. */

@@ -108,3 +108,14 @@ test('first step shows full time under StrictMode', () => {
   expect(clock()).toBe('0:10');
   expect(screen.getByRole('button', { name: 'Start timer' })).toBeInTheDocument();
 });
+
+test('zero duration has no timer and never rings', () => {
+  const onTimerEnd = vi.fn();
+  render(<StepMode sop={{ title: 'x', steps: [
+    { id: 'a', title: 'A', description: '', duration: '' },
+    { id: 'b', title: 'B', description: '', duration: '0 min' }] }} onExit={() => {}} onTimerEnd={onTimerEnd} />);
+  click('Next');
+  expect(clock()).toBeUndefined();
+  tick(2000);
+  expect(onTimerEnd).not.toHaveBeenCalled();
+});

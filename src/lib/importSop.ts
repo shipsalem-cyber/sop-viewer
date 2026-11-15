@@ -17,6 +17,18 @@ function fieldOf(name: string): Field | null {
   return (FIELDS as readonly string[]).includes(n) ? (n as Field) : null;
 }
 
+const UNIT_WORD: Record<string, string> = {
+  s: 'sec', sec: 'sec', secs: 'sec', second: 'sec', seconds: 'sec',
+  m: 'min', min: 'min', mins: 'min', minute: 'min', minutes: 'min',
+  h: 'h', hr: 'h', hrs: 'h', hour: 'h', hours: 'h',
+};
+
+/** "Duration (sec)" -> "sec"; null when there's no recognised unit in brackets. */
+function unitOf(name: string): string | null {
+  const m = name.trim().match(/\(\s*([a-z]+)\s*\)\s*$/i);
+  return m ? UNIT_WORD[m[1].toLowerCase()] ?? null : null;
+}
+
 function baseName(fileName: string): string {
   return fileName.replace(/\.[^.]+$/, '').trim() || 'SOP';
 }
@@ -40,6 +52,10 @@ export function rowsToSop(rows: Record<string, unknown>[], header: string[], fil
     const col = colFor.get(f);
     return col === undefined ? '' : text(row[col]);
   };
+  const durationCol = colFor.get('duration');
+  const durationUnit = durationCol === undefined ? null : unitOf(durationCol);
+  // A bare number under "Duration (sec)" means seconds, not the default minutes.
+  const withUnit = (d: string) => (durationUnit && /^\d+(?:\.\d+)?$/.test(d) ? `${d} ${durationUnit}` : d);
 
   const parsed = rows
     .map((row) => ({
@@ -48,10 +64,12 @@ export function rowsToSop(rows: Record<string, unknown>[], header: string[], fil
         id: newStepId(),
         title: get(row, 'title'),
         description: get(row, 'description'),
-        duration: get(row, 'duration').trim(),
+        duration: withUnit(get(row, 'duration').trim()),
       } satisfies Step,
     }))
-    .filter(({ stepNo, step }) => stepNo || step.title.trim() || step.description.trim() || step.duration);
+    // A step needs words: rows holding only a step number or a duration (pre-numbered
+    // template rows, "Total" footers) are skipped.
+    .filter(({ step }) => step.title.trim() || step.description.trim());
 
   if (parsed.length === 0) throw new ImportError(MSG_NO_STEPS);
 

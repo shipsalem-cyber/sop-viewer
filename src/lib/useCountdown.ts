@@ -22,12 +22,16 @@ export function useCountdown(onEnd: () => void): Countdown {
   const endAt = useRef(0);
   const leftMs = useRef(0);
   const interval = useRef<ReturnType<typeof setInterval> | null>(null);
+  // One-shot timer aimed at the end: repeating timers are throttled hard in background tabs, one-shots much less.
+  const endTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onEndRef = useRef(onEnd);
   onEndRef.current = onEnd;
 
   const clear = () => {
     if (interval.current !== null) clearInterval(interval.current);
+    if (endTimeout.current !== null) clearTimeout(endTimeout.current);
     interval.current = null;
+    endTimeout.current = null;
   };
 
   const tick = useCallback(() => {
@@ -47,6 +51,7 @@ export function useCountdown(onEnd: () => void): Countdown {
     endAt.current = Date.now() + ms;
     setState({ remaining: Math.ceil(ms / 1000), running: true, ended: false });
     interval.current = setInterval(tick, TICK_MS);
+    endTimeout.current = setTimeout(tick, ms);
   }, [tick]);
 
   const start = useCallback((seconds: number) => run(seconds * 1000), [run]);

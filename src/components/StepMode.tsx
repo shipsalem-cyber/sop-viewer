@@ -3,6 +3,12 @@ import { formatClock, parseDuration } from '../lib/duration';
 import type { Sop, Step } from '../lib/types';
 import { useCountdown } from '../lib/useCountdown';
 
+/** Seconds to time this step for, or null when it has no usable (positive) duration. */
+function timedSeconds(duration: string): number | null {
+  const s = parseDuration(duration);
+  return s !== null && s > 0 ? s : null;
+}
+
 type Props = {
   sop: Sop;
   onExit(): void;
@@ -13,7 +19,7 @@ type Props = {
 export function StepMode({ sop, onExit, onTimerStart, onTimerEnd }: Props) {
   const [index, setIndex] = useState(0);
   const step = sop.steps[index];
-  const seconds = step ? parseDuration(step.duration) : null;
+  const seconds = step ? timedSeconds(step.duration) : null;
   const timer = useCountdown(() => onTimerEnd?.(sop.steps[index], index));
 
   // First step: show its timer, but wait for the user to press Start.
@@ -26,7 +32,7 @@ export function StepMode({ sop, onExit, onTimerStart, onTimerEnd }: Props) {
     const next = sop.steps[i];
     if (!next) return;
     setIndex(i);
-    const secs = parseDuration(next.duration);
+    const secs = timedSeconds(next.duration);
     if (secs === null) timer.stop();
     else {
       timer.start(secs);
