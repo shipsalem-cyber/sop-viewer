@@ -1,8 +1,10 @@
-import { useEffect, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { formatDuration } from '../lib/duration';
 import { importFile } from '../lib/importSop';
 import { sopReducer, totalSeconds } from '../lib/sopReducer';
-import { ImportError } from '../lib/types';
+import { requestPermissionOnce, showSystemNotification, startAlarm, startTitleFlash } from '../lib/notify';
+import { ImportError, type Step } from '../lib/types';
+import { DoneAlert } from './DoneAlert';
 import { DownloadMenu } from './DownloadMenu';
 import { ImportControls } from './ImportControls';
 import { StepList } from './StepList';
@@ -15,6 +17,24 @@ export function App() {
   const [notice, setNotice] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const editNewStep = useRef(false);
+  const [doneMessage, setDoneMessage] = useState<string | null>(null);
+  const stopEffects = useRef<(() => void)[]>([]);
+
+  const clearDone = useCallback(() => {
+    stopEffects.current.forEach((stop) => stop());
+    stopEffects.current = [];
+    setDoneMessage(null);
+  }, []);
+
+  const handleTimerEnd = (step: Step, index: number) => {
+    clearDone();
+    const message = `Step ${index + 1} — ${step.title} is done`;
+    setDoneMessage(message);
+    showSystemNotification(message);
+    stopEffects.current = [startAlarm(), startTitleFlash(document.title)];
+  };
+
+  useEffect(() => clearDone, [clearDone]);
 
   // After "+ Add step", open the editor on the step that was just appended.
   useEffect(() => {
@@ -72,7 +92,15 @@ export function App() {
           <p className="muted small">Columns: Step · Title · Description · Duration</p>
         </main>
       ) : view === 'steps' ? (
-        <StepMode sop={sop} onExit={() => setView('list')} />
+        <>
+          {doneMessage && <DoneAlert message={doneMessage} onDismiss={clearDone} />}
+          <StepMode
+            sop={sop}
+            onExit={() => { clearDone(); setView('list'); }}
+            onTimerStart={() => { clearDone(); requestPermissionOnce(); }}
+            onTimerEnd={handleTimerEnd}
+          />
+        </>
       ) : (
         <main>
           <div className="sop-header">

@@ -111,3 +111,10 @@ button, input, textarea { font: inherit; color: inherit; }
   .step-mode-desc { font-size: 1.1rem; }
   .step-nav .btn { flex: 1; justify-content: center; }
 }
+
+.done-alert { position: sticky; top: 8px; z-index: 20; display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin-bottom: 16px; border-radius: 12px; background: var(--accent); color: var(--accent-text); font-size: 1.15rem; font-weight: 600; box-shadow: var(--shadow); animation: pulse 1s ease-in-out infinite alternate; }
+.done-alert .btn { background: var(--surface); color: var(--text); border-color: transparent; }
+.done-text { flex: 1; }
+.done-icon { font-size: 1.5rem; }
+@keyframes pulse { from { filter: brightness(1); } to { filter: brightness(1.12); } }
+@media (prefers-reduced-motion: reduce) { .done-alert { animation: none; } }
