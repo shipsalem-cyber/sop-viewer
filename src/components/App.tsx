@@ -6,6 +6,7 @@ import { ImportError } from '../lib/types';
 import { DownloadMenu } from './DownloadMenu';
 import { ImportControls } from './ImportControls';
 import { StepList } from './StepList';
+import { StepMode } from './StepMode';
 
 export function App() {
   const [sop, dispatch] = useReducer(sopReducer, null);
@@ -71,9 +72,7 @@ export function App() {
           <p className="muted small">Columns: Step · Title · Description · Duration</p>
         </main>
       ) : view === 'steps' ? (
-        <main className="placeholder">
-          <button className="btn" onClick={() => setView('list')}>✕ Back to list</button>
-        </main>
+        <StepMode sop={sop} onExit={() => setView('list')} />
       ) : (
         <main>
           <div className="sop-header">

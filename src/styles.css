@@ -89,3 +89,25 @@ button, input, textarea { font: inherit; color: inherit; }
   .sop-title { font-size: 1.25rem; }
   .list-actions .btn { flex: 1; justify-content: center; }
 }
+
+/* Step-by-step mode */
+.step-mode { display: flex; flex-direction: column; gap: 16px; }
+.step-mode-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.step-progress { width: 100%; height: 6px; appearance: none; border: 0; border-radius: 3px; background: var(--border); overflow: hidden; }
+.step-progress::-webkit-progress-bar { background: var(--border); }
+.step-progress::-webkit-progress-value { background: var(--accent); }
+.step-progress::-moz-progress-bar { background: var(--accent); }
+.step-mode-title { margin: 8px 0 0; font-size: 1.8rem; line-height: 1.25; }
+.step-mode-desc { margin: 0; font-size: 1.3rem; white-space: pre-wrap; }
+.timer { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+.clock { font-size: 3rem; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 4ch; }
+.timer-ended { border-color: var(--accent); }
+.timer-ended .clock { color: var(--accent); }
+.timer-buttons { display: flex; gap: 8px; }
+.step-nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; }
+.btn-lg { padding: 14px 22px; font-size: 1.1rem; }
+@media (max-width: 480px) {
+  .step-mode-title { font-size: 1.4rem; }
+  .step-mode-desc { font-size: 1.1rem; }
+  .step-nav .btn { flex: 1; justify-content: center; }
+}
