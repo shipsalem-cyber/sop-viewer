@@ -1,13 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { App } from './components/App';
 import './styles.css';
-
-function Placeholder() {
-  return <h1>SOP Viewer</h1>;
-}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Placeholder />
+    <App />
   </StrictMode>,
 );
