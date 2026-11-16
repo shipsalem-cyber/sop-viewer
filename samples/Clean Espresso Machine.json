@@ -1,0 +1,56 @@
+[
+  {
+    "Step": 1,
+    "Title": "Prepare",
+    "Description": "Put on gloves. Fill a jug with 500 ml hot water and 1 cleaning tablet.\nPlace the blind basket in the group handle.",
+    "Duration": ""
+  },
+  {
+    "Step": 2,
+    "Title": "Backflush with cleaner",
+    "Description": "Lock in the group handle and run the pump.",
+    "Duration": "10 sec"
+  },
+  {
+    "Step": 3,
+    "Title": "Rest",
+    "Description": "Stop the pump and let the cleaner sit in the group head.",
+    "Duration": "0:30"
+  },
+  {
+    "Step": 4,
+    "Title": "Repeat backflush",
+    "Description": "Run and stop the pump 5 more times.",
+    "Duration": "1 min 30 sec"
+  },
+  {
+    "Step": 5,
+    "Title": "Soak parts",
+    "Description": "Soak group handles and baskets in the cleaning jug.",
+    "Duration": "15 min"
+  },
+  {
+    "Step": 6,
+    "Title": "Purge steam wand",
+    "Description": "Wipe the wand with a damp cloth, then open the steam valve.",
+    "Duration": "5s"
+  },
+  {
+    "Step": 7,
+    "Title": "Rinse",
+    "Description": "Rinse all parts under running water and refit them.",
+    "Duration": "about 5 minutes"
+  },
+  {
+    "Step": 8,
+    "Title": "Flush with water",
+    "Description": "Backflush with clean water (blind basket, no tablet) to remove any cleaner.",
+    "Duration": "2"
+  },
+  {
+    "Step": 9,
+    "Title": "Test shot",
+    "Description": "Pull one shot and discard it. Check taste before serving.",
+    "Duration": "1:00"
+  }
+]
