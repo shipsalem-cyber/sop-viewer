@@ -7,25 +7,38 @@ page clears it, so download anything you want to keep.
 
 ## File format
 
-One row (Excel) or object (JSON) per step:
+One file holds one recipe or SOP. One row (Excel) or object (JSON) per
+ingredient or step:
 
-| Step | Title | Description | Duration |
-|------|-------|-------------|----------|
-| 1 | Mix flour & water | Combine 500 g flour… | 10 min |
+| Type | Step | Title | Description | Duration |
+|------|------|-------|-------------|----------|
+| Ingredient | | Coffee | 18 g, medium-fine | |
+| Ingredient | | Water | 300 ml, 94 °C | |
+| Step | 1 | Rinse filter | Rinse with hot water… | 20 sec |
+| Step | 2 | Bloom | Pour 40 ml… | 45 sec |
 
+- **Type** is `Ingredient` or `Step`. Blank (or no Type column at all) means Step,
+  so older files keep working.
+- For an ingredient, **Title** is the name and **Description** is the amount.
+  Ingredients are never timed and don't count towards the total time.
+- Ingredients can go anywhere in the list, e.g. right before the step that uses them.
+  Files with ingredients keep their row order; files with only steps are sorted by Step.
 - Only **Title** is required. Column names are matched ignoring case and any
   trailing unit, e.g. `Duration (min)`. Other columns are ignored (you'll be told).
 - Excel: the first sheet is used; rows above the header row are skipped.
-- JSON: a list of steps, or `{ "title": "…", "steps": [ … ] }`.
+- JSON: a list of rows, or `{ "title": "…", "steps": [ … ] }`.
 - **Duration** examples: `45 sec`, `30s`, `5 min`, `1h 30m`, `1 hr 15 min 20 sec`,
   `01:30` (1 min 30 s), `1:02:30`. A plain number is minutes. Anything else
   (e.g. `5-10 min`) is shown as text without a timer.
 
-Templates: [`samples/Sourdough.xlsx`](samples/Sourdough.xlsx) and
-[`samples/Sourdough.json`](samples/Sourdough.json).
+Templates in [`samples/`](samples/): **Pour-over Coffee** (with ingredients),
+**Sourdough**, and **Clean Espresso Machine** (every duration style), each as
+`.xlsx` and `.json`.
 
 ## Step-by-step mode
 
+- Steps are counted on their own ("Step 2 of 4"); ingredients placed before a
+  step appear on that step's screen under **You'll need**.
 - One timer at a time. Press **Start timer** on the first step; after that,
   **Next**/**Back** stops the current timer and starts the new step's timer.
 - When a timer ends you get an on-page alert, a repeating beep, a flashing tab

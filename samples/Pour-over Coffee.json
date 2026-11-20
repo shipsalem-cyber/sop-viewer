@@ -1,0 +1,58 @@
+[
+  {
+    "Type": "Ingredient",
+    "Step": null,
+    "Title": "Coffee",
+    "Description": "18 g, medium-fine",
+    "Duration": ""
+  },
+  {
+    "Type": "Ingredient",
+    "Step": null,
+    "Title": "Water",
+    "Description": "300 ml, 94 °C",
+    "Duration": ""
+  },
+  {
+    "Type": "Ingredient",
+    "Step": null,
+    "Title": "Filter paper",
+    "Description": "1",
+    "Duration": ""
+  },
+  {
+    "Type": "Step",
+    "Step": 1,
+    "Title": "Rinse filter",
+    "Description": "Place the filter in the dripper and rinse it with hot water. Discard the water.",
+    "Duration": "20 sec"
+  },
+  {
+    "Type": "Step",
+    "Step": 2,
+    "Title": "Add coffee",
+    "Description": "Add the ground coffee and shake gently to level the bed.",
+    "Duration": ""
+  },
+  {
+    "Type": "Step",
+    "Step": 3,
+    "Title": "Bloom",
+    "Description": "Pour 40 ml of water over the grounds and let it bloom.",
+    "Duration": "45 sec"
+  },
+  {
+    "Type": "Ingredient",
+    "Step": null,
+    "Title": "Cup",
+    "Description": "warmed",
+    "Duration": ""
+  },
+  {
+    "Type": "Step",
+    "Step": 4,
+    "Title": "Pour",
+    "Description": "Pour the rest of the water in slow circles until you reach 300 ml.",
+    "Duration": "2 min 30 sec"
+  }
+]

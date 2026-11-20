@@ -1,29 +1,34 @@
 [
   {
+    "Type": "Step",
     "Step": 1,
     "Title": "Mix flour & water",
     "Description": "Combine 500 g bread flour with 350 g water.\nMix until no dry bits remain.",
     "Duration": "10 min"
   },
   {
+    "Type": "Step",
     "Step": 2,
     "Title": "Rest (autolyse)",
     "Description": "Cover the bowl and leave at room temperature.",
     "Duration": "30 min"
   },
   {
+    "Type": "Step",
     "Step": 3,
     "Title": "Add starter",
     "Description": "Add 100 g active starter and 10 g salt. Squeeze to combine.",
     "Duration": "45 sec"
   },
   {
+    "Type": "Step",
     "Step": 4,
     "Title": "Bulk ferment",
     "Description": "Stretch and fold every 30 minutes, 4 times, then leave covered.",
     "Duration": "1h 30m"
   },
   {
+    "Type": "Step",
     "Step": 5,
     "Title": "Shape",
     "Description": "Turn out, pre-shape, rest briefly, then shape and place in a floured basket.",
