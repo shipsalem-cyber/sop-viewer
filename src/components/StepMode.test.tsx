@@ -1,5 +1,5 @@
 import { StrictMode } from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { StepMode } from './StepMode';
 import type { Sop } from '../lib/types';
 
@@ -118,4 +118,32 @@ test('zero duration has no timer and never rings', () => {
   expect(clock()).toBeUndefined();
   tick(2000);
   expect(onTimerEnd).not.toHaveBeenCalled();
+});
+
+// Ingredients
+const recipe: Sop = { title: 'Pour-over', steps: [
+  { id: 'i1', kind: 'ingredient', title: 'Coffee', description: '18 g', duration: '' },
+  { id: 's1', kind: 'step', title: 'Grind', description: '', duration: '5 s' },
+  { id: 'i2', kind: 'ingredient', title: 'Water', description: '250 ml', duration: '9 min' },
+  { id: 's2', kind: 'step', title: 'Brew', description: '', duration: '3 s' },
+  { id: 'i3', kind: 'ingredient', title: 'Cup', description: '', duration: '' }] };
+
+test('counts steps only and shows what you need', () => {
+  const onTimerEnd = vi.fn();
+  render(<StepMode sop={recipe} onExit={() => {}} onTimerEnd={onTimerEnd} />);
+  expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Step 1 of 2 — Grind');
+  const needs = () => within(screen.getByRole('region', { name: "You'll need" })).getAllByRole('listitem').map((li) => li.textContent);
+  expect(needs()).toEqual(['Coffee — 18 g']);
+  expect(clock()).toBe('0:05');
+  click('Next');
+  expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Step 2 of 2 — Brew');
+  expect(needs()).toEqual(['Water — 250 ml', 'Cup']);
+  expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
+  tick(3000);
+  expect(onTimerEnd).toHaveBeenCalledWith(recipe.steps[3], 1);
+});
+
+test("no You'll need box when a step has no ingredients", () => {
+  render(<StepMode sop={sop} onExit={() => {}} />);
+  expect(screen.queryByRole('region', { name: "You'll need" })).toBeNull();
 });

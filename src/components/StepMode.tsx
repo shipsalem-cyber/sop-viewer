@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { formatClock, parseDuration } from '../lib/duration';
+import { stepScreens } from '../lib/recipe';
 import type { Sop, Step } from '../lib/types';
 import { useCountdown } from '../lib/useCountdown';
 
@@ -17,10 +18,13 @@ type Props = {
 };
 
 export function StepMode({ sop, onExit, onTimerStart, onTimerEnd }: Props) {
+  const screens = stepScreens(sop.steps);
   const [index, setIndex] = useState(0);
-  const step = sop.steps[index];
+  const screen = screens[index];
+  const step = screen?.step;
   const seconds = step ? timedSeconds(step.duration) : null;
-  const timer = useCountdown(() => onTimerEnd?.(sop.steps[index], index));
+  // index is the position among steps, so "Step {index + 1}" messages match the screen.
+  const timer = useCountdown(() => { if (screens[index]) onTimerEnd?.(screens[index].step, index); });
 
   // First step: show its timer, but wait for the user to press Start.
   useEffect(() => {
@@ -29,7 +33,7 @@ export function StepMode({ sop, onExit, onTimerStart, onTimerEnd }: Props) {
   }, []);
 
   const goTo = (i: number) => {
-    const next = sop.steps[i];
+    const next = screens[i]?.step;
     if (!next) return;
     setIndex(i);
     const secs = timedSeconds(next.duration);
@@ -47,8 +51,8 @@ export function StepMode({ sop, onExit, onTimerStart, onTimerEnd }: Props) {
     onTimerStart?.();
   };
 
-  if (!step) return null;
-  const total = sop.steps.length;
+  if (!screen || !step) return null;
+  const total = screens.length;
   const fresh = !timer.running && !timer.ended && timer.remaining === seconds;
 
   return (
@@ -61,6 +65,16 @@ export function StepMode({ sop, onExit, onTimerStart, onTimerEnd }: Props) {
       <progress className="step-progress" max={total} value={index + 1} aria-hidden="true" />
 
       <h2 className="step-mode-title">Step {index + 1} of {total} — {step.title}</h2>
+      {screen.needs.length > 0 && (
+        <section className="needs" aria-label="You'll need">
+          <h3>You'll need</h3>
+          <ul>
+            {screen.needs.map((n) => (
+              <li key={n.id}>{n.description.trim() ? `${n.title} — ${n.description}` : n.title}</li>
+            ))}
+          </ul>
+        </section>
+      )}
       {step.description && <p className="step-mode-desc">{step.description}</p>}
 
       {seconds !== null ? (
