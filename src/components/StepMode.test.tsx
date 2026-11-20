@@ -7,9 +7,9 @@ beforeEach(() => vi.useFakeTimers());
 afterEach(() => vi.useRealTimers());
 
 const sop: Sop = { title: 'Bread', steps: [
-  { id: 'a', title: 'Mix', description: 'Mix it\nwell', duration: '10 s' },
-  { id: 'b', title: 'Rest', description: '', duration: '30 s' },
-  { id: 'c', title: 'Note', description: 'Just a note', duration: '' }] };
+  { id: 'a', kind: 'step', title: 'Mix', description: 'Mix it\nwell', duration: '10 s' },
+  { id: 'b', kind: 'step', title: 'Rest', description: '', duration: '30 s' },
+  { id: 'c', kind: 'step', title: 'Note', description: 'Just a note', duration: '' }] };
 
 const tick = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
 const click = (name: RegExp | string) => fireEvent.click(screen.getByRole('button', { name }));
@@ -77,7 +77,7 @@ test('step without duration has no clock; Back restarts previous', () => {
 });
 
 test('unparseable duration text is shown without clock', () => {
-  render(<StepMode sop={{ title: 'x', steps: [{ id: 'a', title: 'A', description: '', duration: 'about an hour' }] }} onExit={() => {}} />);
+  render(<StepMode sop={{ title: 'x', steps: [{ id: 'a', kind: 'step', title: 'A', description: '', duration: 'about an hour' }] }} onExit={() => {}} />);
   expect(screen.getByText('about an hour')).toBeInTheDocument();
   expect(clock()).toBeUndefined();
 });
@@ -112,8 +112,8 @@ test('first step shows full time under StrictMode', () => {
 test('zero duration has no timer and never rings', () => {
   const onTimerEnd = vi.fn();
   render(<StepMode sop={{ title: 'x', steps: [
-    { id: 'a', title: 'A', description: '', duration: '' },
-    { id: 'b', title: 'B', description: '', duration: '0 min' }] }} onExit={() => {}} onTimerEnd={onTimerEnd} />);
+    { id: 'a', kind: 'step', title: 'A', description: '', duration: '' },
+    { id: 'b', kind: 'step', title: 'B', description: '', duration: '0 min' }] }} onExit={() => {}} onTimerEnd={onTimerEnd} />);
   click('Next');
   expect(clock()).toBeUndefined();
   tick(2000);

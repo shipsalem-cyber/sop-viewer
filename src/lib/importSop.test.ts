@@ -1,4 +1,4 @@
-import { importFile, parseJsonText, parseWorkbook } from './importSop';
+import { importFile, kindOf, parseJsonText, parseWorkbook } from './importSop';
 import { ImportError } from './types';
 import { makeXlsx } from '../test/fixtures/makeXlsx';
 
@@ -19,7 +19,7 @@ test('object with steps + title', () => {
 test('case-insensitive keys, unit suffix, extras reported', () => {
   const r = parseJsonText(JSON.stringify([{ ' title ': 'A', 'Duration (min)': '5', Image: 'x.png', type: 'prep' }]), 'x.json');
   expect(r.sop.steps[0]).toMatchObject({ title: 'A', duration: '5 min' });
-  expect(r.ignoredColumns).toEqual(['Image', 'type']);
+  expect(r.ignoredColumns).toEqual(['Image']);
 });
 
 test('steps get unique ids', () => {
@@ -103,4 +103,37 @@ test.each([
 ] as const)('%s with %j imports as %j', (col, value, expected) => {
   const r = parseJsonText(JSON.stringify([{ Title: 'A', [col]: value }]), 'x.json');
   expect(r.sop.steps[0].duration).toBe(expected);
+});
+
+// Ingredients (Type column)
+test('Type column splits ingredients and steps, keeps file order', () => {
+  const r = parseJsonText(JSON.stringify([
+    { Type: 'Ingredient', Title: 'Coffee', Description: '18 g' },
+    { Type: 'step', Step: 2, Title: 'Brew' },
+    { Type: 'INGREDIENTS', Title: 'Water', Description: '250 ml' },
+    { Type: 'Step', Step: 1, Title: 'Grind' },
+  ]), 'x.json');
+  expect(r.sop.steps.map((s) => [s.kind, s.title])).toEqual([
+    ['ingredient', 'Coffee'], ['step', 'Brew'], ['ingredient', 'Water'], ['step', 'Grind']]);
+  expect(r.ignoredColumns).toEqual([]);
+});
+
+test.each([['', 'step'], ['Step', 'step'], ['note', 'step'], ['ingredient', 'ingredient'], [' Ingredients ', 'ingredient']] as const)(
+  'kindOf(%j) = %s', (v, k) => expect(kindOf(v)).toBe(k));
+
+test('no Type column → all steps', () => {
+  const r = parseJsonText(JSON.stringify([{ Title: 'A' }]), 'x.json');
+  expect(r.sop.steps[0].kind).toBe('step');
+});
+
+// Review Focus 1
+test('ingredients with step numbers stay ingredients, file order kept', () => {
+  const buf = makeXlsx([['Type', 'Step', 'Title'], ['Ingredient', 2, 'Coffee'], ['Step', 1, 'Grind']]);
+  expect(parseWorkbook(buf, 'x.xlsx').sop.steps.map((s) => [s.kind, s.title])).toEqual([['ingredient', 'Coffee'], ['step', 'Grind']]);
+});
+
+// Review Focus 2
+test('blank Type column still sorts by Step', () => {
+  const buf = makeXlsx([['Type', 'Step', 'Title'], ['', 2, 'b'], ['', 1, 'a']]);
+  expect(parseWorkbook(buf, 'x.xlsx').sop.steps.map((s) => s.title)).toEqual(['a', 'b']);
 });

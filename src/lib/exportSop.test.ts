@@ -4,8 +4,8 @@ import { parseWorkbook } from './importSop';
 import type { Sop } from './types';
 
 const sop: Sop = { title: 'Bread', steps: [
-  { id: 'a', title: 'Mix', description: 'x\ny', duration: '01:30' },
-  { id: 'b', title: 'Bake', description: '', duration: '20 min' }] };
+  { id: 'a', kind: 'step', title: 'Mix', description: 'x\ny', duration: '01:30' },
+  { id: 'b', kind: 'step', title: 'Bake', description: '', duration: '20 min' }] };
 
 const sheetRows = (bytes: ArrayBuffer) =>
   XLSX.utils.sheet_to_json(XLSX.read(bytes, { type: 'array' }).Sheets['SOP'], { header: 1 });
@@ -27,7 +27,7 @@ test('xlsx header row order', () => {
 });
 
 test('numeric-looking duration is written as text', () => {
-  const bytes = toXlsxBytes({ title: 'T', steps: [{ id: 'a', title: 'A', description: '', duration: '10' }] });
+  const bytes = toXlsxBytes({ title: 'T', steps: [{ id: 'a', kind: 'step', title: 'A', description: '', duration: '10' }] });
   const ws = XLSX.read(bytes, { type: 'array' }).Sheets['SOP'];
   expect(ws['D2'].t).toBe('s');
 });

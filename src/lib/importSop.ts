@@ -1,9 +1,9 @@
 import * as XLSX from 'xlsx';
 import { formatDuration } from './duration';
-import { ImportError, newStepId, type ImportResult, type Step } from './types';
+import { ImportError, newStepId, type ImportResult, type Step, type StepKind } from './types';
 
-type Field = 'step' | 'title' | 'description' | 'duration';
-const FIELDS: readonly Field[] = ['step', 'title', 'description', 'duration'];
+type Field = 'type' | 'step' | 'title' | 'description' | 'duration';
+const FIELDS: readonly Field[] = ['type', 'step', 'title', 'description', 'duration'];
 
 const MSG_NO_HEADER = "Couldn't find a header row with a 'Title' column.";
 const MSG_NO_STEPS = 'The file has no steps.';
@@ -27,6 +27,11 @@ const UNIT_WORD: Record<string, string> = {
 function unitOf(name: string): string | null {
   const m = name.trim().match(/\(\s*([a-z]+)\s*\)\s*$/i);
   return m ? UNIT_WORD[m[1].toLowerCase()] ?? null : null;
+}
+
+/** Type cell -> kind. Only "ingredient(s)" (any case) is an ingredient; anything else is a step. */
+export function kindOf(value: string): StepKind {
+  return /^ingredients?$/i.test(value.trim()) ? 'ingredient' : 'step';
 }
 
 function baseName(fileName: string): string {
@@ -62,6 +67,7 @@ export function rowsToSop(rows: Record<string, unknown>[], header: string[], fil
       stepNo: get(row, 'step').trim(),
       step: {
         id: newStepId(),
+        kind: kindOf(get(row, 'type')),
         title: get(row, 'title'),
         description: get(row, 'description'),
         duration: withUnit(get(row, 'duration').trim()),
@@ -73,8 +79,10 @@ export function rowsToSop(rows: Record<string, unknown>[], header: string[], fil
 
   if (parsed.length === 0) throw new ImportError(MSG_NO_STEPS);
 
+  // Ingredients have no step number, so a file that has any keeps its own row order.
+  const hasIngredients = parsed.some(({ step }) => step.kind === 'ingredient');
   const allNumeric = parsed.every(({ stepNo }) => stepNo !== '' && Number.isFinite(Number(stepNo)));
-  if (allNumeric) parsed.sort((a, b) => Number(a.stepNo) - Number(b.stepNo)); // Array.sort is stable
+  if (!hasIngredients && allNumeric) parsed.sort((a, b) => Number(a.stepNo) - Number(b.stepNo)); // Array.sort is stable
 
   return { sop: { title: baseName(fileName), steps: parsed.map((p) => p.step) }, ignoredColumns };
 }

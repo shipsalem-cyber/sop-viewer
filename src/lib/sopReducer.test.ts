@@ -2,9 +2,9 @@ import { sopReducer, totalSeconds } from './sopReducer';
 import type { Sop } from './types';
 
 const mk = (): Sop => ({ title: 'T', steps: [
-  { id: 'a', title: 'A', description: '', duration: '10 min' },
-  { id: 'b', title: 'B', description: '', duration: '5-10 min' },
-  { id: 'c', title: 'C', description: '', duration: '45 sec' }] });
+  { id: 'a', kind: 'step', title: 'A', description: '', duration: '10 min' },
+  { id: 'b', kind: 'step', title: 'B', description: '', duration: '5-10 min' },
+  { id: 'c', kind: 'step', title: 'C', description: '', duration: '45 sec' }] });
 const titles = (s: Sop | null) => s!.steps.map((x) => x.title);
 
 test('load replaces', () => {
@@ -19,7 +19,7 @@ test('setTitle', () => {
 
 test('updateStep patches only that step', () => {
   const s = sopReducer(mk(), { type: 'updateStep', id: 'b', patch: { title: 'Bee', duration: '1m' } })!;
-  expect(s.steps[1]).toEqual({ id: 'b', title: 'Bee', description: '', duration: '1m' });
+  expect(s.steps[1]).toEqual({ id: 'b', kind: 'step', title: 'Bee', description: '', duration: '1m' });
   expect(s.steps[0]).toEqual(mk().steps[0]);
 });
 

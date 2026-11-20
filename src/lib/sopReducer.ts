@@ -25,7 +25,7 @@ export function sopReducer(state: Sop | null, action: SopAction): Sop | null {
     case 'addStep':
       return {
         ...state,
-        steps: [...state.steps, { id: newStepId(), title: 'New step', description: '', duration: '' }],
+        steps: [...state.steps, { id: newStepId(), kind: 'step', title: 'New step', description: '', duration: '' }],
       };
     case 'deleteStep':
       return { ...state, steps: state.steps.filter((s) => s.id !== action.id) };
