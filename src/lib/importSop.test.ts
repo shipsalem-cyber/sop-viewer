@@ -137,3 +137,15 @@ test('blank Type column still sorts by Step', () => {
   const buf = makeXlsx([['Type', 'Step', 'Title'], ['', 2, 'b'], ['', 1, 'a']]);
   expect(parseWorkbook(buf, 'x.xlsx').sop.steps.map((s) => s.title)).toEqual(['a', 'b']);
 });
+
+test('unrecognised Type values are reported once each, in order', () => {
+  const r = parseJsonText(JSON.stringify([
+    { Type: 'Prep', Title: 'a' }, { Type: 'Ingredient', Title: 'b' }, { Type: 'Cook', Title: 'c' },
+    { Type: 'prep', Title: 'd' }, { Type: 'Steps', Title: 'e' }, { Type: '', Title: 'f' },
+  ]), 'x.json');
+  expect(r.unknownTypes).toEqual(['Prep', 'Cook']);
+});
+
+test('no unknown types for a normal file', () => {
+  expect(parseJsonText(JSON.stringify([{ Type: 'Step', Title: 'a' }]), 'x.json').unknownTypes).toEqual([]);
+});

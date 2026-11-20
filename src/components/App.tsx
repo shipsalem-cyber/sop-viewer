@@ -49,17 +49,17 @@ export function App() {
   const handleFile = async (file: File) => {
     if (sop && !window.confirm('Replace the current SOP? Unsaved changes will be lost.')) return;
     try {
-      const { sop: next, ignoredColumns } = await importFile(file);
+      const { sop: next, ignoredColumns, unknownTypes } = await importFile(file);
       dispatch({ type: 'load', sop: next });
       setError(null);
       setEditingId(null);
       clearDone();
       setView('list');
-      setNotice(
-        ignoredColumns.length
-          ? `These columns will not be included in downloads: ${ignoredColumns.join(', ')}`
-          : null,
-      );
+      const notes = [
+        ignoredColumns.length && `These columns will not be included in downloads: ${ignoredColumns.join(', ')}`,
+        unknownTypes.length && `Type values not recognised (treated as Step): ${unknownTypes.join(', ')}`,
+      ].filter(Boolean);
+      setNotice(notes.length ? notes.join('. ') : null);
     } catch (e) {
       setError(e instanceof ImportError ? e.message : 'Something went wrong reading that file.');
     }
@@ -92,7 +92,7 @@ export function App() {
           <h1>SOP &amp; Recipe Viewer</h1>
           <p>Import an Excel or JSON file to see it step by step.</p>
           <p className="muted">or drop a file anywhere on the page</p>
-          <p className="muted small">Columns: Step · Title · Description · Duration</p>
+          <p className="muted small">Columns: Type · Step · Title · Description · Duration</p>
         </main>
       ) : view === 'steps' ? (
         <>

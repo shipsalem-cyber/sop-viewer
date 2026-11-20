@@ -79,12 +79,22 @@ export function rowsToSop(rows: Record<string, unknown>[], header: string[], fil
 
   if (parsed.length === 0) throw new ImportError(MSG_NO_STEPS);
 
+  // Type values we don't understand become steps; report them so the user knows they won't be kept.
+  const unknownTypes: string[] = [];
+  const seen = new Set<string>();
+  for (const row of rows) {
+    const t = get(row, 'type').trim();
+    if (!t || /^(ingredients?|steps?)$/i.test(t) || seen.has(t.toLowerCase())) continue;
+    seen.add(t.toLowerCase());
+    unknownTypes.push(t);
+  }
+
   // Ingredients have no step number, so a file that has any keeps its own row order.
   const hasIngredients = parsed.some(({ step }) => step.kind === 'ingredient');
   const allNumeric = parsed.every(({ stepNo }) => stepNo !== '' && Number.isFinite(Number(stepNo)));
   if (!hasIngredients && allNumeric) parsed.sort((a, b) => Number(a.stepNo) - Number(b.stepNo)); // Array.sort is stable
 
-  return { sop: { title: baseName(fileName), steps: parsed.map((p) => p.step) }, ignoredColumns };
+  return { sop: { title: baseName(fileName), steps: parsed.map((p) => p.step) }, ignoredColumns, unknownTypes };
 }
 
 export function parseJsonText(source: string, fileName: string): ImportResult {

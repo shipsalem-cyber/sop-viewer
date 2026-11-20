@@ -187,3 +187,14 @@ test('ingredients only: step-by-step disabled, download works', async () => {
   await user.click(screen.getByRole('menuitem', { name: 'JSON' }));
   expect(JSON.parse(spy.mock.calls[0][0] as string)[0]).toMatchObject({ Type: 'Ingredient', Title: 'Salt' });
 });
+
+test('unrecognised Type values are flagged in the notice', async () => {
+  const { upload } = setup();
+  await upload(jsonFile([{ Type: 'Prep', Title: 'A' }, { Type: 'Cook', Title: 'B' }]));
+  expect(screen.getByText('Type values not recognised (treated as Step): Prep, Cook')).toBeInTheDocument();
+});
+
+test('empty-state hint lists the Type column', () => {
+  setup();
+  expect(screen.getByText('Columns: Type · Step · Title · Description · Duration')).toBeInTheDocument();
+});
