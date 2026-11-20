@@ -52,3 +52,23 @@ test('actions on null return null', () => {
 test('totalSeconds ignores unparseable', () => {
   expect(totalSeconds(mk())).toBe(645);
 });
+
+test('addIngredient appends an ingredient', () => {
+  const s = sopReducer(mk(), { type: 'addIngredient' })!;
+  expect(s.steps[3]).toMatchObject({ kind: 'ingredient', title: 'New ingredient', description: '', duration: '' });
+});
+
+test('addStep appends kind step', () => {
+  expect(sopReducer(mk(), { type: 'addStep' })!.steps[3].kind).toBe('step');
+});
+
+test('updateStep can switch kind', () => {
+  expect(sopReducer(mk(), { type: 'updateStep', id: 'a', patch: { kind: 'ingredient' } })!.steps[0].kind).toBe('ingredient');
+});
+
+// Review Focus 3 (total half)
+test('totalSeconds ignores ingredient durations', () => {
+  const s = mk();
+  s.steps[0] = { ...s.steps[0], kind: 'ingredient' };
+  expect(totalSeconds(s)).toBe(45);
+});

@@ -7,6 +7,7 @@ export type SopAction =
   | { type: 'setTitle'; title: string }
   | { type: 'updateStep'; id: string; patch: Partial<Omit<Step, 'id'>> }
   | { type: 'addStep' }
+  | { type: 'addIngredient' }
   | { type: 'deleteStep'; id: string }
   | { type: 'moveStep'; fromId: string; toId: string };
 
@@ -27,6 +28,11 @@ export function sopReducer(state: Sop | null, action: SopAction): Sop | null {
         ...state,
         steps: [...state.steps, { id: newStepId(), kind: 'step', title: 'New step', description: '', duration: '' }],
       };
+    case 'addIngredient':
+      return {
+        ...state,
+        steps: [...state.steps, { id: newStepId(), kind: 'ingredient', title: 'New ingredient', description: '', duration: '' }],
+      };
     case 'deleteStep':
       return { ...state, steps: state.steps.filter((s) => s.id !== action.id) };
     case 'moveStep': {
@@ -39,5 +45,5 @@ export function sopReducer(state: Sop | null, action: SopAction): Sop | null {
 }
 
 export function totalSeconds(sop: Sop): number {
-  return sop.steps.reduce((sum, s) => sum + (parseDuration(s.duration) ?? 0), 0);
+  return sop.steps.reduce((sum, s) => sum + (s.kind === 'step' ? parseDuration(s.duration) ?? 0 : 0), 0);
 }

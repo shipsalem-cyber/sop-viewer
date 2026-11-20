@@ -1,19 +1,14 @@
 import * as XLSX from 'xlsx';
+import { stepNumbers } from './recipe';
 import type { Sop } from './types';
 
 const HEADER = ['Type', 'Step', 'Title', 'Description', 'Duration'] as const;
 const DURATION_COL = 4;
 
-/** Step numbers count steps only; ingredients get null. */
-function numbers(sop: Sop): (number | null)[] {
-  let n = 0;
-  return sop.steps.map((s) => (s.kind === 'step' ? ++n : null));
-}
-
 const typeLabel = (s: Sop['steps'][number]) => (s.kind === 'ingredient' ? 'Ingredient' : 'Step');
 
 export function toJsonText(sop: Sop): string {
-  const nos = numbers(sop);
+  const nos = stepNumbers(sop.steps);
   const rows = sop.steps.map((s, i) => ({
     Type: typeLabel(s),
     Step: nos[i],
@@ -25,7 +20,7 @@ export function toJsonText(sop: Sop): string {
 }
 
 export function toXlsxBytes(sop: Sop): ArrayBuffer {
-  const nos = numbers(sop);
+  const nos = stepNumbers(sop.steps);
   const ws = XLSX.utils.aoa_to_sheet([
     [...HEADER],
     ...sop.steps.map((s, i) => [typeLabel(s), nos[i], s.title, s.description, null]),
