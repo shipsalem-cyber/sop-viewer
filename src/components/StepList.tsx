@@ -5,6 +5,7 @@ import {
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { SopAction } from '../lib/sopReducer';
 import type { Step } from '../lib/types';
+import { stepNumbers } from '../lib/recipe';
 import { StepRow } from './StepRow';
 
 type Props = {
@@ -27,6 +28,10 @@ export function StepList({ steps, editingId, setEditingId, dispatch }: Props) {
     }
   };
 
+  const stepNos = stepNumbers(steps);
+  let ingredientCount = 0;
+  const ingredientNos = steps.map((s) => (s.kind === 'ingredient' ? ++ingredientCount : null));
+
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={steps.map((s) => s.id)} strategy={verticalListSortingStrategy}>
@@ -35,12 +40,14 @@ export function StepList({ steps, editingId, setEditingId, dispatch }: Props) {
             <StepRow
               key={step.id}
               step={step}
-              index={i}
+              stepNo={stepNos[i]}
+              ingredientNo={ingredientNos[i]}
               editing={editingId === step.id}
               onToggleEdit={() => setEditingId(editingId === step.id ? null : step.id)}
               onChange={(patch) => dispatch({ type: 'updateStep', id: step.id, patch })}
               onDelete={() => {
-                if (window.confirm(`Delete step ${i + 1}?`)) {
+                const question = step.kind === 'ingredient' ? `Delete ingredient "${step.title}"?` : `Delete step ${stepNos[i]}?`;
+                if (window.confirm(question)) {
                   dispatch({ type: 'deleteStep', id: step.id });
                   setEditingId(null);
                 }

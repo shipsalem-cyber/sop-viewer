@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { formatDuration } from '../lib/duration';
 import { importFile } from '../lib/importSop';
+import { stepCount } from '../lib/recipe';
 import { sopReducer, totalSeconds } from '../lib/sopReducer';
 import { primeAudio, requestPermissionOnce, showSystemNotification, startAlarm, startTitleFlash } from '../lib/notify';
 import { ImportError, type Step } from '../lib/types';
 import { DoneAlert } from './DoneAlert';
 import { DownloadMenu } from './DownloadMenu';
 import { ImportControls } from './ImportControls';
+import { IngredientsSummary } from './IngredientsSummary';
 import { StepList } from './StepList';
 import { StepMode } from './StepMode';
 
@@ -113,6 +115,7 @@ export function App() {
             />
             {total > 0 && <span className="total">Total: {formatDuration(total)}</span>}
           </div>
+          <IngredientsSummary items={sop.steps} />
           <StepList steps={sop.steps} editingId={editingId} setEditingId={setEditingId} dispatch={dispatch} />
           {sop.steps.length === 0 && <p className="muted">No steps yet.</p>}
           <div className="list-actions">
@@ -125,7 +128,16 @@ export function App() {
             >
               + Add step
             </button>
-            <button className="btn btn-primary" disabled={sop.steps.length === 0} onClick={() => setView('steps')}>
+            <button
+              className="btn"
+              onClick={() => {
+                editNewStep.current = true;
+                dispatch({ type: 'addIngredient' });
+              }}
+            >
+              + Add ingredient
+            </button>
+            <button className="btn btn-primary" disabled={stepCount(sop.steps) === 0} onClick={() => setView('steps')}>
               ▶ Start step-by-step
             </button>
           </div>
