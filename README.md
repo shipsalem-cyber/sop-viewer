@@ -1,9 +1,27 @@
 # SOP & Recipe Viewer
 
-A static web page for viewing SOPs and recipes step by step. Import an Excel or
-JSON file, drag steps into a new order, edit them, walk through them one at a
-time with a timer, and download the result. Nothing is saved: refreshing the
-page clears it, so download anything you want to keep.
+A static web page for viewing SOPs and recipes step by step. Import Excel or
+JSON files, drag steps into a new order, edit them, walk through them one at a
+time with a timer, and download the result. Made to be set up once and used all
+day, e.g. on a café or restaurant tablet.
+
+## Recipe library
+
+- **Import several files at once** (choose them together, or drop them on the
+  page). Each file is one recipe. New imports are added to the recipes already
+  loaded; a file with the same recipe name asks before replacing it. A file
+  that can't be read doesn't stop the others — you're told which one failed.
+- **Recipe list**: sorted A–Z with a search box. On a phone it's the
+  **Recipes ▾** button at the top.
+- **Remembered on this device**: recipes and your edits are kept in this
+  browser, so a refresh or restart brings them back. Nothing is uploaded.
+  **Remove recipe** takes one out; **Clear all** empties the device. Download a
+  recipe to get your edits back into a file. (In a private window the browser
+  may not keep them — you'll see a notice.)
+- **One recipe cooks at a time**: while step-by-step is running the recipe list
+  and Import are hidden; **✕ Back to list** stops the timer and brings them back.
+- **Examples**: the first page offers the three sample files below as Excel or
+  JSON downloads.
 
 ## File format
 

@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { downloadFile, safeFileName, toJsonText, toXlsxBytes } from '../lib/exportSop';
+import { downloadFile, safeFileName, toJsonText, toXlsxBytes, XLSX_MIME } from '../lib/exportSop';
 import type { Sop } from '../lib/types';
-
-const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 export function DownloadMenu({ sop }: { sop: Sop }) {
   const [open, setOpen] = useState(false);

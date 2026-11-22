@@ -2,6 +2,8 @@ import * as XLSX from 'xlsx';
 import { stepNumbers } from './recipe';
 import type { Sop } from './types';
 
+export const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
 const HEADER = ['Type', 'Step', 'Title', 'Description', 'Duration'] as const;
 const DURATION_COL = 4;
 

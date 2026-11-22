@@ -156,3 +156,10 @@ button, input, textarea { font: inherit; color: inherit; }
   .recipe-list.expanded .recipe-panel { display: flex; }
   .recipe-panel h2 { display: none; }
 }
+
+/* Example downloads on the first page */
+.examples { margin: 24px auto 0; max-width: 460px; text-align: left; }
+.examples ul { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.examples li { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.example-buttons { display: flex; gap: 6px; }
+.example-buttons .btn { padding: 4px 10px; font-size: 0.9rem; }

@@ -9,6 +9,7 @@ import { primeAudio, requestPermissionOnce, showSystemNotification, startAlarm, 
 import type { Step } from '../lib/types';
 import { DoneAlert } from './DoneAlert';
 import { DownloadMenu } from './DownloadMenu';
+import { ExampleDownloads } from './ExampleDownloads';
 import { ImportControls } from './ImportControls';
 import { IngredientsSummary } from './IngredientsSummary';
 import { RecipeList } from './RecipeList';
@@ -145,6 +146,7 @@ export function App() {
           <p>Import one or more Excel or JSON files</p>
           <p className="muted">or drop files anywhere on the page</p>
           <p className="muted small">Columns: Type · Step · Title · Description · Duration</p>
+          <ExampleDownloads />
         </main>
       ) : view === 'steps' ? (
         <>

@@ -320,3 +320,15 @@ test('corrupt saved data shows notice', () => {
   expect(screen.getByText("Saved recipes couldn't be read and were cleared.")).toBeInTheDocument();
   expect(screen.getByText(/drop files anywhere/i)).toBeInTheDocument();
 });
+
+test('empty state offers example downloads', async () => {
+  const spy = vi.spyOn(exportSop, 'downloadFile').mockImplementation(() => {});
+  const { user } = setup();
+  expect(screen.getByText('Import one or more Excel or JSON files')).toBeInTheDocument();
+  expect(screen.getByText('Not sure how to set up a file? Download an example:')).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Download Pour-over Coffee as Excel' }));
+  expect(spy.mock.calls[0].slice(1)).toEqual(['Pour-over Coffee.xlsx', exportSop.XLSX_MIME]);
+  await user.click(screen.getByRole('button', { name: 'Download Sourdough as JSON' }));
+  expect(spy.mock.calls[1].slice(1)).toEqual(['Sourdough.json', 'application/json']);
+  expect(screen.getByText(/drop files anywhere/i)).toBeInTheDocument();
+});
