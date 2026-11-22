@@ -1,4 +1,4 @@
-import { emptyLibrary, findByTitle, libraryReducer, newRecipe, openRecipe, sortedRecipes, type Library, type Recipe } from './library';
+import { emptyLibrary, findByTitle, libraryReducer, newRecipe, openRecipe, sortedRecipes, uniqueTitle, type Library, type Recipe } from './library';
 import type { Sop } from './types';
 
 const sop = (title: string, stepTitle = 'Mix'): Sop => ({
@@ -78,4 +78,12 @@ test('replace of a recipe that is gone changes nothing', () => {
   const bread = newRecipe(sop('Bread'));
   const lib = add(emptyLibrary, bread);
   expect(libraryReducer(lib, { type: 'replace', id: 'gone', sop: sop('Rye') })).toBe(lib);
+});
+
+test('uniqueTitle picks the lowest free name', () => {
+  const named = (...ts: string[]) => ts.map((t) => newRecipe(sop(t)));
+  expect(uniqueTitle([])).toBe('New recipe');
+  expect(uniqueTitle(named(' new RECIPE '))).toBe('New recipe 2');
+  expect(uniqueTitle(named('New recipe', 'New recipe 3'))).toBe('New recipe 2');
+  expect(uniqueTitle(named('New recipe', 'New recipe 2'))).toBe('New recipe 3');
 });

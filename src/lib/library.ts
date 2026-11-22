@@ -31,6 +31,14 @@ export function findByTitle(recipes: Recipe[], title: string): Recipe | undefine
   return recipes.find((r) => r.title.trim().toLowerCase() === t);
 }
 
+/** "New recipe", or "New recipe N" with the lowest free N ≥ 2 when the name is taken. */
+export function uniqueTitle(recipes: Recipe[], base = 'New recipe'): string {
+  if (!findByTitle(recipes, base)) return base;
+  let n = 2;
+  while (findByTitle(recipes, `${base} ${n}`)) n++;
+  return `${base} ${n}`;
+}
+
 export function openRecipe(lib: Library): Recipe | null {
   return lib.recipes.find((r) => r.id === lib.openId) ?? null;
 }

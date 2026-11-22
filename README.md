@@ -11,6 +11,8 @@ day, e.g. on a café or restaurant tablet.
   page). Each file is one recipe. New imports are added to the recipes already
   loaded; a file with the same recipe name asks before replacing it. A file
   that can't be read doesn't stop the others — you're told which one failed.
+- **+ New recipe** (in the recipe list, or on the first page) adds an empty
+  recipe and opens it, ready to type its name and add steps and ingredients.
 - **Recipe list**: sorted A–Z with a search box. On a phone it's the
   **Recipes ▾** button at the top.
 - **Remembered on this device**: recipes and your edits are kept in this

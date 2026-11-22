@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { formatDuration } from '../lib/duration';
 import { failureText, importMany, noticeText, type FailedFile, type ImportedFile } from '../lib/importMany';
-import { findByTitle, libraryReducer, newRecipe, openRecipe, type Library } from '../lib/library';
+import { findByTitle, libraryReducer, newRecipe, openRecipe, uniqueTitle, type Library } from '../lib/library';
 import { loadLibrary, saveLibrary } from '../lib/libraryStorage';
 import { stepCount } from '../lib/recipe';
 import { totalSeconds, type SopAction } from '../lib/sopReducer';
@@ -113,6 +113,22 @@ export function App() {
     setNotice(noticeText(imported));
   };
 
+  // "+ New recipe": add an empty, uniquely named recipe and select its title so the name can be typed straight away.
+  const titleInput = useRef<HTMLInputElement>(null);
+  const selectTitle = useRef(false);
+  useEffect(() => {
+    if (!selectTitle.current) return;
+    selectTitle.current = false;
+    titleInput.current?.focus();
+    titleInput.current?.select();
+  }, [library.openId]);
+
+  const createRecipe = () => {
+    setEditingId(null);
+    selectTitle.current = true;
+    libDispatch({ type: 'add', recipe: newRecipe({ title: uniqueTitle(library.recipes), steps: [] }) });
+  };
+
   const openOther = (id: string) => {
     setEditingId(null);
     libDispatch({ type: 'open', id });
@@ -165,6 +181,9 @@ export function App() {
           <h1>SOP &amp; Recipe Viewer</h1>
           <p>Import one or more Excel or JSON files</p>
           <p className="muted">or drop files anywhere on the page</p>
+          <p>
+            <button className="btn" onClick={createRecipe}>+ New recipe</button>
+          </p>
           <p className="muted small">Columns: Type · Step · Title · Description · Duration</p>
           <ExampleDownloads />
         </main>
@@ -184,12 +203,14 @@ export function App() {
           recipes={library.recipes}
           openId={library.openId}
           onOpen={openOther}
+          onNew={createRecipe}
           onRemove={removeOpen}
           onClearAll={clearAll}
         />
         <main>
           <div className="sop-header">
             <input
+              ref={titleInput}
               className="sop-title"
               aria-label="SOP title"
               value={sop.title}

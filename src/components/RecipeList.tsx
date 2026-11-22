@@ -5,12 +5,13 @@ type Props = {
   recipes: Recipe[];
   openId: string | null;
   onOpen(id: string): void;
+  onNew(): void;
   onRemove(): void;
   onClearAll(): void;
 };
 
 /** The library sidebar: count, search, A–Z list, Remove recipe and Clear all. Collapses behind a toggle on phones. */
-export function RecipeList({ recipes, openId, onOpen, onRemove, onClearAll }: Props) {
+export function RecipeList({ recipes, openId, onOpen, onNew, onRemove, onClearAll }: Props) {
   const [query, setQuery] = useState('');
   const [expanded, setExpanded] = useState(false);
   const shown = sortedRecipes(recipes, query);
@@ -23,6 +24,7 @@ export function RecipeList({ recipes, openId, onOpen, onRemove, onClearAll }: Pr
       </button>
       <div className="recipe-panel">
         <h2>{heading}</h2>
+        <button className="btn" onClick={() => { onNew(); setExpanded(false); }}>+ New recipe</button>
         <input
           type="search"
           className="recipe-search"

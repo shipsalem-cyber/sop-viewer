@@ -345,3 +345,42 @@ test('overlapping imports are checked against each other and keep every failure'
   expect(recipeTitles()).toEqual(['Bread']);
   expect(screen.getByRole('alert').textContent).toMatch(/^Couldn't import: notes\.csv — /);
 });
+
+// ---- + New recipe ----
+
+test('new recipe from the first page opens it with the title selected', async () => {
+  const { user } = setup();
+  await user.click(screen.getByRole('button', { name: '+ New recipe' }));
+  expect(recipeTitles()).toEqual(['New recipe']);
+  const title = screen.getByLabelText('SOP title') as HTMLInputElement;
+  expect(title).toHaveValue('New recipe');
+  expect(title).toHaveFocus();
+  expect([title.selectionStart, title.selectionEnd]).toEqual([0, 10]);
+  expect(screen.getByText('No steps yet.')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /Start step-by-step/ })).toBeDisabled();
+});
+
+test('a second new recipe gets the next number', async () => {
+  const { user } = setup();
+  await user.click(screen.getByRole('button', { name: '+ New recipe' }));
+  await user.click(screen.getByRole('button', { name: '+ New recipe' }));
+  expect(recipeTitles()).toEqual(['New recipe', 'New recipe 2']);
+  expect(openTitle()).toBe('New recipe 2');
+});
+
+test('new recipe closes an open step editor', async () => {
+  const { user, upload } = setup();
+  await upload(bread());
+  await user.click(screen.getByRole('button', { name: 'Edit step 1' }));
+  await user.click(screen.getByRole('button', { name: '+ New recipe' }));
+  expect(screen.queryByLabelText('Title')).toBeNull();
+  expect(openTitle()).toBe('New recipe');
+});
+
+test('new recipe is remembered', async () => {
+  const { user } = setup();
+  await user.click(screen.getByRole('button', { name: '+ New recipe' }));
+  cleanup();
+  render(<App />);
+  expect(recipeTitles()).toEqual(['New recipe']);
+});
