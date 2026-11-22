@@ -70,7 +70,7 @@ export function App() {
   return (
     <div className="app">
       <header className="toolbar">
-        <ImportControls onFile={handleFile} />
+        <ImportControls onFiles={(files) => files[0] && handleFile(files[0])} />
         {sop && <DownloadMenu sop={sop} />}
       </header>
 

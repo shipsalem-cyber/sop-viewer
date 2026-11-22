@@ -1,27 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
 
-type Props = { onFile: (file: File) => void };
+type Props = { onFiles(files: File[]): void; disabled?: boolean };
 
-/** "Import" button plus a whole-window drop zone. */
-export function ImportControls({ onFile }: Props) {
+/** "Import" button plus a whole-window drop zone; both accept several files. Hidden and inert while disabled. */
+export function ImportControls({ onFiles, disabled = false }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
-  const onFileRef = useRef(onFile);
-  onFileRef.current = onFile;
+  const onFilesRef = useRef(onFiles);
+  onFilesRef.current = onFiles;
+  const disabledRef = useRef(disabled);
+  disabledRef.current = disabled;
 
   useEffect(() => {
     let depth = 0;
     const hasFiles = (e: DragEvent) => !!e.dataTransfer?.types.includes('Files');
-    const enter = (e: DragEvent) => { if (hasFiles(e)) { depth++; setDragging(true); } };
-    const leave = (e: DragEvent) => { if (hasFiles(e) && --depth <= 0) { depth = 0; setDragging(false); } };
+    // While disabled, drops are still swallowed so the browser doesn't navigate away to the file.
+    const enter = (e: DragEvent) => { if (hasFiles(e) && !disabledRef.current) { depth++; setDragging(true); } };
+    const leave = (e: DragEvent) => { if (hasFiles(e) && !disabledRef.current && --depth <= 0) { depth = 0; setDragging(false); } };
     const over = (e: DragEvent) => { if (hasFiles(e)) e.preventDefault(); };
     const drop = (e: DragEvent) => {
       if (!hasFiles(e)) return;
       e.preventDefault();
       depth = 0;
       setDragging(false);
-      const file = e.dataTransfer?.files[0];
-      if (file) onFileRef.current(file);
+      if (disabledRef.current) return;
+      const files = Array.from(e.dataTransfer?.files ?? []);
+      if (files.length) onFilesRef.current(files);
     };
     window.addEventListener('dragenter', enter);
     window.addEventListener('dragleave', leave);
@@ -35,6 +39,10 @@ export function ImportControls({ onFile }: Props) {
     };
   }, []);
 
+  useEffect(() => { if (disabled) setDragging(false); }, [disabled]);
+
+  if (disabled) return null;
+
   return (
     <>
       <label className="btn btn-primary">
@@ -43,15 +51,16 @@ export function ImportControls({ onFile }: Props) {
           ref={inputRef}
           type="file"
           accept=".xlsx,.xls,.json"
+          multiple
           className="visually-hidden"
           onChange={(e) => {
-            const file = e.target.files?.[0];
+            const files = Array.from(e.target.files ?? []);
             e.target.value = '';
-            if (file) onFile(file);
+            if (files.length) onFiles(files);
           }}
         />
       </label>
-      {dragging && <div className="drop-overlay">Drop your Excel or JSON file</div>}
+      {dragging && <div className="drop-overlay">Drop your Excel or JSON files</div>}
     </>
   );
 }
