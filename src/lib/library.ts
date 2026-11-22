@@ -40,6 +40,7 @@ export function libraryReducer(state: Library, action: LibraryAction): Library {
     case 'add':
       return { recipes: [...state.recipes, action.recipe], openId: action.recipe.id };
     case 'replace':
+      if (!state.recipes.some((r) => r.id === action.id)) return state;
       return {
         recipes: state.recipes.map((r) => (r.id === action.id ? { ...action.sop, id: r.id } : r)),
         openId: action.id,

@@ -332,3 +332,16 @@ test('empty state offers example downloads', async () => {
   expect(spy.mock.calls[1].slice(1)).toEqual(['Sourdough.json', 'application/json']);
   expect(screen.getByText(/drop files anywhere/i)).toBeInTheDocument();
 });
+
+test('overlapping imports are checked against each other and keep every failure', async () => {
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+  setup();
+  const input = screen.getByLabelText('Import Excel/JSON');
+  fireEvent.change(input, { target: { files: [bread('Mix'), new File(['a,b'], 'notes.csv')] } });
+  fireEvent.change(input, { target: { files: [bread('Knead')] } });
+  await screen.findByRole('alert');
+  await vi.waitFor(() => expect(rowTitles()).toEqual(['Knead']));
+  expect(confirm).toHaveBeenCalledTimes(1);
+  expect(recipeTitles()).toEqual(['Bread']);
+  expect(screen.getByRole('alert').textContent).toMatch(/^Couldn't import: notes\.csv — /);
+});

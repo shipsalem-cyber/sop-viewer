@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { formatDuration } from '../lib/duration';
-import { failureText, importMany, noticeText } from '../lib/importMany';
+import { failureText, importMany, noticeText, type FailedFile, type ImportedFile } from '../lib/importMany';
 import { findByTitle, libraryReducer, newRecipe, openRecipe, type Library } from '../lib/library';
 import { loadLibrary, saveLibrary } from '../lib/libraryStorage';
 import { stepCount } from '../lib/recipe';
@@ -65,10 +65,30 @@ export function App() {
     }
   }, [sop]);
 
+  // Imports run one at a time: files dropped while one is being read join it, and the results are
+  // applied to the library as it is *after* reading, so removals, renames and earlier files all count.
+  const libraryRef = useRef(library);
+  libraryRef.current = library;
+  const pendingFiles = useRef<File[]>([]);
+  const importing = useRef(false);
+
   const handleFiles = async (files: File[]) => {
-    const { imported, failed } = await importMany(files);
-    // Track the library as it grows during this batch, so duplicates within one drop are caught too.
-    let lib: Library = library;
+    pendingFiles.current.push(...files);
+    if (importing.current) return;
+    importing.current = true;
+    const imported: ImportedFile[] = [];
+    const failed: FailedFile[] = [];
+    try {
+      while (pendingFiles.current.length) {
+        const batch = await importMany(pendingFiles.current.splice(0));
+        imported.push(...batch.imported);
+        failed.push(...batch.failed);
+      }
+    } finally {
+      importing.current = false;
+    }
+
+    let lib: Library = libraryRef.current;
     let firstId: string | null = null;
     for (const { result } of imported) {
       const existing = findByTitle(lib.recipes, result.sop.title);

@@ -73,3 +73,9 @@ test('findByTitle ignores case and surrounding spaces', () => {
   expect(findByTitle(recipes, '  bread ')?.title).toBe('Bread');
   expect(findByTitle(recipes, 'Tea')).toBeUndefined();
 });
+
+test('replace of a recipe that is gone changes nothing', () => {
+  const bread = newRecipe(sop('Bread'));
+  const lib = add(emptyLibrary, bread);
+  expect(libraryReducer(lib, { type: 'replace', id: 'gone', sop: sop('Rye') })).toBe(lib);
+});
