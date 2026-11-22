@@ -45,16 +45,13 @@ test('moving to next step clears the previous alert', async () => {
   expect(screen.getByRole('alert')).toHaveTextContent('Step 2 — Rest is done');
 });
 
-test('importing a new file while the alarm rings stops it', async () => {
+test('import is unavailable while cooking; leaving step-by-step stops a ringing alarm', async () => {
   await openStepMode();
   fireEvent.click(screen.getByRole('button', { name: 'Start timer' }));
   act(() => { vi.advanceTimersByTime(3000); });
   expect(document.title).toBe('⏰ Done');
-  vi.useRealTimers();
-  vi.spyOn(window, 'confirm').mockReturnValue(true);
-  const file = new File([JSON.stringify([{ Title: 'Other' }])], 'Other.json');
-  await act(async () => { fireEvent.change(screen.getByLabelText('Import Excel/JSON'), { target: { files: [file] } }); });
-  await screen.findByText('Other');
+  expect(screen.queryByLabelText('Import Excel/JSON')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: '✕ Back to list' }));
   expect(document.title).toBe('SOP Viewer');
   expect(screen.queryByRole('alert')).toBeNull();
 });

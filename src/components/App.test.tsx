@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from './App';
 import * as exportSop from '../lib/exportSop';
@@ -15,14 +15,14 @@ function setup() {
   const user = userEvent.setup({ applyAccept: false });
   render(<App />);
   const input = () => screen.getByLabelText('Import Excel/JSON') as HTMLInputElement;
-  return { user, upload: (f: File) => user.upload(input(), f) };
+  return { user, upload: (f: File | File[]) => user.upload(input(), f) };
 }
 
 afterEach(() => vi.restoreAllMocks());
 
 test('shows empty state before import', () => {
   setup();
-  expect(screen.getByText(/drop a file anywhere/i)).toBeInTheDocument();
+  expect(screen.getByText(/drop files anywhere/i)).toBeInTheDocument();
 });
 
 test('importing JSON lists steps in order with total', async () => {
@@ -36,7 +36,7 @@ test('importing JSON lists steps in order with total', async () => {
 test('ignored columns notice', async () => {
   const { upload } = setup();
   await upload(jsonFile([{ Title: 'A', Image: 'x.png' }]));
-  expect(screen.getByText('These columns will not be included in downloads: Image')).toBeInTheDocument();
+  expect(screen.getByText('Bread.json: These columns will not be included in downloads: Image')).toBeInTheDocument();
 });
 
 test('unsupported file keeps current SOP', async () => {
@@ -52,18 +52,6 @@ test('malformed JSON shows error', async () => {
   const { upload } = setup();
   await upload(new File(['{oops'], 'x.json'));
   expect(screen.getByRole('alert')).toHaveTextContent("This JSON file couldn't be read.");
-});
-
-test('replace confirm: cancel keeps, ok replaces', async () => {
-  const { upload } = setup();
-  await upload(jsonFile(three));
-  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
-  await upload(jsonFile([{ Title: 'Other' }], 'Other.json'));
-  expect(confirm).toHaveBeenCalledWith('Replace the current SOP? Unsaved changes will be lost.');
-  expect(rowTitles()).toEqual(['Mix', 'Rest', 'Shape']);
-  confirm.mockReturnValue(true);
-  await upload(jsonFile([{ Title: 'Other' }], 'Other.json'));
-  expect(rowTitles()).toEqual(['Other']);
 });
 
 test('edit a step title', async () => {
@@ -191,10 +179,144 @@ test('ingredients only: step-by-step disabled, download works', async () => {
 test('unrecognised Type values are flagged in the notice', async () => {
   const { upload } = setup();
   await upload(jsonFile([{ Type: 'Prep', Title: 'A' }, { Type: 'Cook', Title: 'B' }]));
-  expect(screen.getByText('Type values not recognised (treated as Step): Prep, Cook')).toBeInTheDocument();
+  expect(screen.getByText('Bread.json: Type values not recognised (treated as Step): Prep, Cook')).toBeInTheDocument();
 });
 
 test('empty-state hint lists the Type column', () => {
   setup();
   expect(screen.getByText('Columns: Type · Step · Title · Description · Duration')).toBeInTheDocument();
+});
+
+// ---- Recipe library ----
+
+const recipeTitles = () =>
+  within(screen.getByRole('list', { name: 'Recipe list' })).queryAllByRole('button').map((b) => b.textContent);
+const openTitle = () => (screen.getByLabelText('SOP title') as HTMLInputElement).value;
+const bread = (stepTitle = 'Mix') => jsonFile([{ Title: stepTitle }], 'Bread.json');
+const coffee = () => jsonFile([{ Title: 'Brew' }], 'Coffee.json');
+
+test('importing two files lists both A–Z and opens the first imported', async () => {
+  const { upload } = setup();
+  await upload([coffee(), bread()]);
+  expect(recipeTitles()).toEqual(['Bread', 'Coffee']);
+  expect(openTitle()).toBe('Coffee');
+  expect(screen.getByRole('heading', { name: 'Recipes (2)' })).toBeInTheDocument();
+});
+
+test('a later import adds instead of replacing', async () => {
+  const confirm = vi.spyOn(window, 'confirm');
+  const { upload } = setup();
+  await upload(bread());
+  await upload(coffee());
+  expect(recipeTitles()).toEqual(['Bread', 'Coffee']);
+  expect(confirm).not.toHaveBeenCalled();
+});
+
+test('same title asks to replace; Cancel keeps the current one', async () => {
+  const { upload } = setup();
+  await upload(bread('Mix'));
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+  await upload(bread('Knead'));
+  expect(confirm).toHaveBeenCalledWith('Replace "Bread"? OK replaces it, Cancel keeps the current one.');
+  expect(rowTitles()).toEqual(['Mix']);
+  confirm.mockReturnValue(true);
+  await upload(bread('Knead'));
+  expect(rowTitles()).toEqual(['Knead']);
+  expect(recipeTitles()).toEqual(['Bread']);
+});
+
+test('same title twice in one drop asks once', async () => {
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+  const { upload } = setup();
+  await upload([bread('Mix'), bread('Knead')]);
+  expect(confirm).toHaveBeenCalledTimes(1);
+  expect(recipeTitles()).toEqual(['Bread']);
+  expect(rowTitles()).toEqual(['Knead']);
+});
+
+test('one bad file does not block the others', async () => {
+  const { upload } = setup();
+  await upload([bread(), new File(['a,b'], 'notes.csv')]);
+  expect(recipeTitles()).toEqual(['Bread']);
+  expect(screen.getByRole('alert').textContent).toMatch(/^Couldn't import: notes\.csv — /);
+});
+
+test('edits survive switching and reload', async () => {
+  const { user, upload } = setup();
+  await upload([bread(), coffee()]);
+  await user.click(screen.getByRole('button', { name: 'Bread' }));
+  await user.click(screen.getByRole('button', { name: 'Edit step 1' }));
+  const title = screen.getByLabelText('Title');
+  await user.clear(title);
+  await user.type(title, 'Proof');
+  await user.click(screen.getByRole('button', { name: 'Coffee' }));
+  expect(rowTitles()).toEqual(['Brew']);
+  await user.click(screen.getByRole('button', { name: 'Bread' }));
+  expect(rowTitles()).toEqual(['Proof']);
+
+  cleanup();
+  render(<App />);
+  expect(openTitle()).toBe('Bread');
+  expect(rowTitles()).toEqual(['Proof']);
+  expect(recipeTitles()).toEqual(['Bread', 'Coffee']);
+});
+
+test('search filters the list', async () => {
+  const { user, upload } = setup();
+  await upload([bread(), coffee()]);
+  await user.type(screen.getByLabelText('Search recipes'), 'co');
+  expect(recipeTitles()).toEqual(['Coffee']);
+});
+
+test('remove recipe confirms and opens the next', async () => {
+  const { user, upload } = setup();
+  await upload([coffee(), bread()]);
+  await user.click(screen.getByRole('button', { name: 'Bread' }));
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+  await user.click(screen.getByRole('button', { name: 'Remove recipe' }));
+  expect(confirm).toHaveBeenCalledWith('Remove "Bread" from this device?');
+  expect(recipeTitles()).toEqual(['Coffee']);
+  expect(openTitle()).toBe('Coffee');
+});
+
+test('clear all confirms and returns to the empty state', async () => {
+  const { user, upload } = setup();
+  await upload([coffee(), bread()]);
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
+  await user.click(screen.getByRole('button', { name: 'Clear all' }));
+  expect(confirm).toHaveBeenCalledWith("Remove all 2 recipes from this device? This can't be undone.");
+  expect(screen.getByText(/drop files anywhere/i)).toBeInTheDocument();
+  expect(JSON.parse(localStorage.getItem('sop-viewer.library')!).recipes).toEqual([]);
+});
+
+test('step-by-step hides the library controls and ignores dropped files', async () => {
+  const { user, upload } = setup();
+  await upload(bread());
+  await user.click(screen.getByRole('button', { name: /Start step-by-step/ }));
+  expect(screen.queryByRole('navigation', { name: 'Recipes' })).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Import Excel/JSON')).not.toBeInTheDocument();
+
+  const drop = new Event('drop', { cancelable: true });
+  Object.defineProperty(drop, 'dataTransfer', { value: { types: ['Files'], files: [coffee()] } });
+  fireEvent(window, drop);
+  expect(drop.defaultPrevented).toBe(true);
+
+  await user.click(screen.getByRole('button', { name: '✕ Back to list' }));
+  expect(recipeTitles()).toEqual(['Bread']);
+  expect(screen.getByLabelText('Import Excel/JSON')).toBeInTheDocument();
+});
+
+test('save failure shows once', async () => {
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('full', 'QuotaExceededError'); });
+  const { user, upload } = setup();
+  await upload(bread());
+  await user.type(screen.getByLabelText('SOP title'), 'ab');
+  expect(screen.getAllByText("Recipes won't be remembered on this device.")).toHaveLength(1);
+});
+
+test('corrupt saved data shows notice', () => {
+  localStorage.setItem('sop-viewer.library', '{oops');
+  setup();
+  expect(screen.getByText("Saved recipes couldn't be read and were cleared.")).toBeInTheDocument();
+  expect(screen.getByText(/drop files anywhere/i)).toBeInTheDocument();
 });

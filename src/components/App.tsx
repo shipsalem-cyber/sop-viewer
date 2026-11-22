@@ -1,19 +1,30 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { formatDuration } from '../lib/duration';
-import { importFile } from '../lib/importSop';
+import { failureText, importMany, noticeText } from '../lib/importMany';
+import { findByTitle, libraryReducer, newRecipe, openRecipe, type Library } from '../lib/library';
+import { loadLibrary, saveLibrary } from '../lib/libraryStorage';
 import { stepCount } from '../lib/recipe';
-import { sopReducer, totalSeconds } from '../lib/sopReducer';
+import { totalSeconds, type SopAction } from '../lib/sopReducer';
 import { primeAudio, requestPermissionOnce, showSystemNotification, startAlarm, startTitleFlash } from '../lib/notify';
-import { ImportError, type Step } from '../lib/types';
+import type { Step } from '../lib/types';
 import { DoneAlert } from './DoneAlert';
 import { DownloadMenu } from './DownloadMenu';
 import { ImportControls } from './ImportControls';
 import { IngredientsSummary } from './IngredientsSummary';
+import { RecipeList } from './RecipeList';
 import { StepList } from './StepList';
 import { StepMode } from './StepMode';
 
+const MSG_CORRUPT = "Saved recipes couldn't be read and were cleared.";
+const MSG_NOT_SAVED = "Recipes won't be remembered on this device.";
+
 export function App() {
-  const [sop, dispatch] = useReducer(sopReducer, null);
+  const [loaded] = useState(() => loadLibrary());
+  const [library, libDispatch] = useReducer(libraryReducer, loaded.library);
+  const sop = openRecipe(library);
+  const dispatch = useCallback((action: SopAction) => libDispatch({ type: 'edit', action }), []);
+  const [storageNotice, setStorageNotice] = useState<string | null>(loaded.problem === 'corrupt' ? MSG_CORRUPT : null);
+  const warnedNotSaved = useRef(false);
   const [view, setView] = useState<'list' | 'steps'>('list');
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -38,6 +49,13 @@ export function App() {
 
   useEffect(() => clearDone, [clearDone]);
 
+  // Remember the library on this device after every change; warn once if the browser won't store it.
+  useEffect(() => {
+    if (saveLibrary(library) || warnedNotSaved.current) return;
+    warnedNotSaved.current = true;
+    setStorageNotice(MSG_NOT_SAVED);
+  }, [library]);
+
   // After "+ Add step", open the editor on the step that was just appended.
   useEffect(() => {
     if (editNewStep.current && sop?.steps.length) {
@@ -46,23 +64,51 @@ export function App() {
     }
   }, [sop]);
 
-  const handleFile = async (file: File) => {
-    if (sop && !window.confirm('Replace the current SOP? Unsaved changes will be lost.')) return;
-    try {
-      const { sop: next, ignoredColumns, unknownTypes } = await importFile(file);
-      dispatch({ type: 'load', sop: next });
-      setError(null);
+  const handleFiles = async (files: File[]) => {
+    const { imported, failed } = await importMany(files);
+    // Track the library as it grows during this batch, so duplicates within one drop are caught too.
+    let lib: Library = library;
+    let firstId: string | null = null;
+    for (const { result } of imported) {
+      const existing = findByTitle(lib.recipes, result.sop.title);
+      let action;
+      if (existing) {
+        if (!window.confirm(`Replace "${existing.title}"? OK replaces it, Cancel keeps the current one.`)) continue;
+        action = { type: 'replace', id: existing.id, sop: result.sop } as const;
+      } else {
+        action = { type: 'add', recipe: newRecipe(result.sop) } as const;
+      }
+      lib = libraryReducer(lib, action);
+      libDispatch(action);
+      firstId ??= lib.openId;
+    }
+    if (firstId) {
+      libDispatch({ type: 'open', id: firstId });
       setEditingId(null);
       clearDone();
       setView('list');
-      const notes = [
-        ignoredColumns.length && `These columns will not be included in downloads: ${ignoredColumns.join(', ')}`,
-        unknownTypes.length && `Type values not recognised (treated as Step): ${unknownTypes.join(', ')}`,
-      ].filter(Boolean);
-      setNotice(notes.length ? notes.join('. ') : null);
-    } catch (e) {
-      setError(e instanceof ImportError ? e.message : 'Something went wrong reading that file.');
     }
+    setError(failureText(failed));
+    setNotice(noticeText(imported));
+  };
+
+  const openOther = (id: string) => {
+    setEditingId(null);
+    libDispatch({ type: 'open', id });
+  };
+
+  const removeOpen = () => {
+    if (!sop || !window.confirm(`Remove "${sop.title}" from this device?`)) return;
+    setEditingId(null);
+    libDispatch({ type: 'remove', id: sop.id });
+  };
+
+  const clearAll = () => {
+    const n = library.recipes.length;
+    if (!window.confirm(`Remove all ${n} ${n === 1 ? 'recipe' : 'recipes'} from this device? This can't be undone.`)) return;
+    setEditingId(null);
+    setNotice(null);
+    libDispatch({ type: 'clear' });
   };
 
   const total = sop ? totalSeconds(sop) : 0;
@@ -70,14 +116,20 @@ export function App() {
   return (
     <div className="app">
       <header className="toolbar">
-        <ImportControls onFiles={(files) => files[0] && handleFile(files[0])} />
-        {sop && <DownloadMenu sop={sop} />}
+        <ImportControls onFiles={handleFiles} disabled={view === 'steps'} />
+        {sop && view === 'list' && <DownloadMenu sop={sop} />}
       </header>
 
       {error && (
         <div role="alert" className="banner banner-error">
           {error}
           <button className="icon-btn" aria-label="Dismiss error" onClick={() => setError(null)}>✕</button>
+        </div>
+      )}
+      {storageNotice && (
+        <div role="status" className="banner banner-info">
+          {storageNotice}
+          <button className="icon-btn" aria-label="Dismiss storage notice" onClick={() => setStorageNotice(null)}>✕</button>
         </div>
       )}
       {notice && (
@@ -90,8 +142,8 @@ export function App() {
       {!sop ? (
         <main className="empty">
           <h1>SOP &amp; Recipe Viewer</h1>
-          <p>Import an Excel or JSON file to see it step by step.</p>
-          <p className="muted">or drop a file anywhere on the page</p>
+          <p>Import one or more Excel or JSON files</p>
+          <p className="muted">or drop files anywhere on the page</p>
           <p className="muted small">Columns: Type · Step · Title · Description · Duration</p>
         </main>
       ) : view === 'steps' ? (
@@ -105,6 +157,14 @@ export function App() {
           />
         </>
       ) : (
+        <div className="library">
+        <RecipeList
+          recipes={library.recipes}
+          openId={library.openId}
+          onOpen={openOther}
+          onRemove={removeOpen}
+          onClearAll={clearAll}
+        />
         <main>
           <div className="sop-header">
             <input
@@ -142,6 +202,7 @@ export function App() {
             </button>
           </div>
         </main>
+        </div>
       )}
     </div>
   );
